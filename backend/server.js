@@ -59,6 +59,13 @@ const auth = (req, res, next) => {
     res.status(401).json({ error: "Invalid token" });
   }
 };
+//role 
+const requireRole = (roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+  next();
+};
 // ===== Routes =====
 
 // 🟢 Register
