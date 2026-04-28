@@ -1,31 +1,53 @@
-app.post("/register", async (req, res) => {
-  try {
-    const { username, password } = req.body;
+import { useState } from "react";
+import axios from "axios";
+import styles from "../styles/styles";
 
-    // check لو موجود
-    const exist = await User.findOne({ username });
-    if (exist) {
-      return res.status(400).json({ error: "User already exists" });
-    }
+const API = "https://file-system-project-production.up.railway.app";
 
-    // تشفير الباسورد
-    const hashed = await bcrypt.hash(password, 10);
+function Register() {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
 
-    // 🔥 تحديد الرول
-    const count = await User.countDocuments();
+    const register = async () => {
+        try {
+            await axios.post(`${API}/register`, {
+                username,
+                password
+            });
 
-    const user = new User({
-      username,
-      password: hashed,
-      role: count === 0 ? "owner" : "user" // 👑 أول واحد owner
-    });
+            alert("Account created ✅");
+            window.location.href = "/login";
 
-    await user.save();
+        } catch (err) {
+            console.log(err);
+            alert("Register failed ❌");
+        }
+    };
 
-    res.json({ message: "User created", role: user.role });
+    return (
+        <div style={styles.container}>
+            <div style={styles.card}>
+                <h2>Create Account</h2>
 
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Register error" });
-  }
-});
+                <input
+                    placeholder="Username"
+                    style={styles.input}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
+
+                <input
+                    type="password"
+                    placeholder="Password"
+                    style={styles.input}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+
+                <button style={styles.button} onClick={register}>
+                    Sign Up
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export default Register;
