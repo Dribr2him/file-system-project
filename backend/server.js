@@ -6,9 +6,12 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
-
+const SECRET = "mysecretkey"; // غيرها بعدين
 // ===== App Config =====
 const app = express();
+
+//ربط االسيرفر 
+const File = require("./models/File");
 
 // إنشاء فولدر uploads لو مش موجود
 if (!fs.existsSync("uploads")) {
@@ -42,19 +45,20 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ===== Auth Config =====
-const SECRET = "mysecretkey";
+
 
 // ===== Auth Middleware =====
 const auth = (req, res, next) => {
   const token = req.headers.authorization;
 
-  if (!token) return res.status(401).json({ message: "No token" });
+  if (!token) return res.status(401).json({ error: "No token" });
 
   try {
-    jwt.verify(token, SECRET);
+    const decoded = jwt.verify(token, SECRET);
+    req.user = decoded;
     next();
   } catch {
-    res.status(401).json({ message: "Invalid token" });
+    res.status(401).json({ error: "Invalid token" });
   }
 };
 
@@ -62,39 +66,65 @@ const auth = (req, res, next) => {
 
 // 🟢 Register (مرة واحدة بس)
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const hashed = await bcrypt.hash(password, 10);
+    const exist = await User.findOne({ username });
+    if (exist) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
-  const user = new User({
-    username,
-    password: hashed
-  });
+    const hashed = await bcrypt.hash(password, 10);
 
-  await user.save();
-  res.json({ message: "User created" });
+    const user = new User({
+      username,
+      password: hashed,
+      isAdmin: true // 🔥 مهم
+    });
+
+    await user.save();
+
+    res.json({ message: "User created" });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Register error" });
+  }
 });
-
 // 🟢 Login
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const user = await User.findOne({ username });
-  if (!user) return res.status(400).json({ message: "User not found" });
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(400).json({ message: "Wrong password" });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(400).json({ error: "Wrong password" });
+    }
 
-  const token = jwt.sign({ id: user._id }, SECRET);
+    const token = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      SECRET
+    );
 
-  res.json({ token });
+    res.json({ token });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Login error" });
+  }
 });
 
+
 // 🟢 Upload (محمي)
-app.post("/upload", upload.single("file"), async (req, res) => {
+app.post("/upload", auth, upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: "Not allowed" });
     }
 
     const newFile = new File({
@@ -104,15 +134,27 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     });
 
     await newFile.save();
-
     res.json(newFile);
 
   } catch (err) {
-    console.log("UPLOAD ERROR:", err);
-    res.status(500).json({ error: "Upload failed" });
+    console.log(err);
+    res.status(500).json({ error: "Upload error" });
   }
 });
 
+// 🟢 Stetion
+app.get("/files/:station", async (req, res) => {
+  try {
+    const station = req.params.station;
+
+    const files = await File.find({ station });
+
+    res.json(files);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // 🟢 Add Link
 app.post("/add-link", async (req, res) => {
   const { title, url } = req.body;
