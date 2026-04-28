@@ -20,11 +20,16 @@ function AdminRoute({ children }) {
 
   try {
     const decoded = JSON.parse(atob(token.split(".")[1]));
-    return decoded.isAdmin ? children : <Navigate to="/" />;
-  } catch {
+
+    return (decoded.role === "admin" || decoded.role === "owner")
+      ? children
+      : <Navigate to="/" />;
+
+  } catch (err) {
     return <Navigate to="/login" />;
   }
 }
+
 
 function App() {
   return (
