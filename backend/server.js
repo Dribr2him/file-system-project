@@ -200,6 +200,15 @@ app.delete("/delete/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+const path = require("path");
+
+// يخدم ملفات React
+app.use(express.static(path.join(__dirname, "../frontend/build")));
+
+// أي route تاني يفتح React
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
+});
 // ===== Start Server =====
 app.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
