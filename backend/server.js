@@ -6,14 +6,12 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
-const SECRET = "mysecretkey"; // غيرها بعدين
+const path = require("path");
+
+const SECRET = "mysecretkey";
+
 // ===== App Config =====
 const app = express();
-app.get("/", (req, res) => {
-  res.send("Server is running 🚀");
-});
-//ربط االسيرفر 
-// const File = require("./models/File");
 
 // إنشاء فولدر uploads لو مش موجود
 if (!fs.existsSync("uploads")) {
@@ -33,7 +31,8 @@ mongoose.connect(process.env.MONGO_URL)
 const File = mongoose.model("File", {
   title: String,
   type: String,
-  url: String
+  url: String,
+  station: String // 🔥 تم التعديل
 });
 
 const User = require("./models/User");
@@ -45,9 +44,6 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + "-" + file.originalname)
 });
 const upload = multer({ storage });
-
-// ===== Auth Config =====
-
 
 // ===== Auth Middleware =====
 const auth = (req, res, next) => {
@@ -66,7 +62,7 @@ const auth = (req, res, next) => {
 
 // ===== Routes =====
 
-// 🟢 Register (مرة واحدة بس)
+// 🟢 Register
 app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -81,7 +77,7 @@ app.post("/register", async (req, res) => {
     const user = new User({
       username,
       password: hashed,
-      isAdmin: true // 🔥 مهم
+      isAdmin: true
     });
 
     await user.save();
@@ -93,6 +89,7 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ error: "Register error" });
   }
 });
+
 // 🟢 Login
 app.post("/login", async (req, res) => {
   try {
@@ -121,8 +118,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
-// 🟢 Upload (محمي)
+// 🟢 Upload
 app.post("/upload", auth, upload.single("file"), async (req, res) => {
   try {
     if (!req.user.isAdmin) {
@@ -132,7 +128,8 @@ app.post("/upload", auth, upload.single("file"), async (req, res) => {
     const newFile = new File({
       title: req.file.originalname,
       type: req.file.mimetype,
-      url: req.file.path
+      url: req.file.path,
+      station: req.body.station // 🔥 تم التعديل
     });
 
     await newFile.save();
@@ -144,40 +141,38 @@ app.post("/upload", auth, upload.single("file"), async (req, res) => {
   }
 });
 
-// 🟢 Stetion
+// 🟢 Files by station
 app.get("/files/:station", async (req, res) => {
   try {
     const station = req.params.station;
-
     const files = await File.find({ station });
-
     res.json(files);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 // 🟢 Add Link
 app.post("/add-link", async (req, res) => {
-  const { title, url } = req.body;
+  const { title, url, station } = req.body;
 
   const newFile = new File({
     title,
     type: "link",
-    url
+    url,
+    station // 🔥 تم التعديل
   });
 
   await newFile.save();
   res.json(newFile);
 });
 
-// 🟢 Get Files
-
+// 🟢 Get All Files
 app.get("/files", async (req, res) => {
   try {
     const files = await File.find();
 
-    // فلترة الملفات اللي موجودة بس
     const validFiles = files.filter(f => {
       if (f.type === "link") return true;
       return fs.existsSync(f.url);
@@ -191,24 +186,28 @@ app.get("/files", async (req, res) => {
   }
 });
 
-// ===== Delete File =====
-app.delete("/delete/:id", async (req, res) => {
+// 🟢 Delete File (Protected)
+app.delete("/delete/:id", auth, async (req, res) => {
   try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
     await File.findByIdAndDelete(req.params.id);
     res.json({ message: "Deleted successfully" });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-const path = require("path");
 
-// يخدم ملفات React
+// ===== Serve React =====
 app.use(express.static(path.join(__dirname, "../frontend/build")));
 
-// أي route تاني يفتح React
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
 });
+
 // ===== Start Server =====
 app.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
