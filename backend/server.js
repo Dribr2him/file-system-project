@@ -91,15 +91,26 @@ app.post("/login", async (req, res) => {
 });
 
 // 🟢 Upload (محمي)
-app.post("/upload", auth, upload.single("file"), async (req, res) => {
-  const newFile = new File({
-    title: req.file.originalname,
-    type: req.file.mimetype,
-    url: req.file.path
-  });
+app.post("/upload", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-  await newFile.save();
-  res.json(newFile);
+    const newFile = new File({
+      title: req.file.originalname,
+      type: req.file.mimetype,
+      url: req.file.path
+    });
+
+    await newFile.save();
+
+    res.json(newFile);
+
+  } catch (err) {
+    console.log("UPLOAD ERROR:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
 });
 
 // 🟢 Add Link
