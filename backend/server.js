@@ -46,20 +46,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ===== Auth Middleware =====
-const auth = (req, res, next) => {
-  const token = req.headers.authorization;
-
-  if (!token) return res.status(401).json({ error: "No token" });
-
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
+const requireRole = (roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({ error: "Not allowed" });
   }
+  next();
 };
-
 // ===== Routes =====
 
 // 🟢 Register
@@ -67,22 +59,27 @@ app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // check لو موجود
     const exist = await User.findOne({ username });
     if (exist) {
       return res.status(400).json({ error: "User already exists" });
     }
 
+    // تشفير الباسورد
     const hashed = await bcrypt.hash(password, 10);
+
+    // 🔥 تحديد الرول
+    const count = await User.countDocuments();
 
     const user = new User({
       username,
       password: hashed,
-      isAdmin: true
+      role: count === 0 ? "owner" : "user" // 👑 أول واحد owner
     });
 
     await user.save();
 
-    res.json({ message: "User created" });
+    res.json({ message: "User created", role: user.role });
 
   } catch (err) {
     console.log(err);
@@ -106,7 +103,7 @@ app.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, isAdmin: user.isAdmin },
+      { id: user._id, role: user.role },
       SECRET
     );
 
@@ -119,7 +116,7 @@ app.post("/login", async (req, res) => {
 });
 
 // 🟢 Upload
-app.post("/upload", auth, upload.single("file"), async (req, res) => {
+app.post("/upload", auth, requireRole(["admin", "owner"]), upload.single("file"), async (req, res) => {
   try {
     if (!req.user.isAdmin) {
       return res.status(403).json({ error: "Not allowed" });
@@ -187,7 +184,7 @@ app.get("/files", async (req, res) => {
 });
 
 // 🟢 Delete File (Protected)
-app.delete("/delete/:id", auth, async (req, res) => {
+app.delete("/delete/:id", auth, requireRole(["admin", "owner"]), async (req, res) => {
   try {
     if (!req.user.isAdmin) {
       return res.status(403).json({ error: "Not allowed" });
@@ -199,6 +196,17 @@ app.delete("/delete/:id", auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+// owner 
+app.put("/make-admin/:id", auth, requireRole(["owner"]), async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { role: "admin" });
+  res.json({ message: "User is now admin" });
+});
+
+// user 
+app.put("/make-user/:id", auth, requireRole(["owner"]), async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { role: "user" });
+  res.json({ message: "User is now normal user" });
 });
 
 // ===== Serve React =====

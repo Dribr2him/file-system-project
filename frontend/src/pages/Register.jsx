@@ -1,61 +1,31 @@
-import { useState } from "react";
-import axios from "axios";
-import styles from "../styles/styles";
+app.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-const API = "https://file-system-project-production.up.railway.app";
+    // check لو موجود
+    const exist = await User.findOne({ username });
+    if (exist) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
-function Register() {
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState(""); // لو مش مستخدمه مش مشكلة
-    const [password, setPassword] = useState("");
+    // تشفير الباسورد
+    const hashed = await bcrypt.hash(password, 10);
 
-    const register = async () => {
-        try {
-            await axios.post(`${API}/register`, {
-                username,
-                password
-            });
+    // 🔥 تحديد الرول
+    const count = await User.countDocuments();
 
-            alert("Account created ✅");
+    const user = new User({
+      username,
+      password: hashed,
+      role: count === 0 ? "owner" : "user" // 👑 أول واحد owner
+    });
 
-            window.location.href = "/login";
-        } catch (err) {
-            console.log(err);
-            alert("Register failed ❌");
-        }
-    };
+    await user.save();
 
-    return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h2>Create Account</h2>
+    res.json({ message: "User created", role: user.role });
 
-                <input
-                    placeholder="Username"
-                    style={styles.input}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
-
-                <input
-                    placeholder="Email"
-                    style={styles.input}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-
-                <input
-                    type="password"
-                    placeholder="Password"
-                    style={styles.input}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-
-                {/* 🔥 هنا المهم */}
-                <button style={styles.button} onClick={register}>
-                    Sign Up
-                </button>
-            </div>
-        </div>
-    );
-}
-
-export default Register;
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Register error" });
+  }
+});
