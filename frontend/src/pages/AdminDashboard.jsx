@@ -1,48 +1,53 @@
 import { useState } from "react";
 import axios from "axios";
-import styles from "../styles/styles";
 
 const API = "https://file-system-project-production.up.railway.app";
 
 function AdminDashboard() {
   const [file, setFile] = useState(null);
+  const [title, setTitle] = useState("");
+  const [station, setStation] = useState("math");
 
   const upload = async () => {
-    const token = localStorage.getItem("token");
+    if (!file) return alert("اختار ملف ❌");
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("title", title);
+    formData.append("station", station);
 
-    await axios.post(`${API}/upload`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    try {
+      await axios.post(`${API}/upload`, formData, {
+        headers: {
+          Authorization: localStorage.getItem("token"),
+        },
+      });
 
-    alert("Uploaded ✅");
+      alert("تم الرفع ✅");
+    } catch (err) {
+      console.log(err);
+      alert("فشل الرفع ❌");
+    }
   };
 
   return (
-    <div style={styles.dashboard}>
-      <div style={styles.sidebar}>
-        <h2>Admin</h2>
+    <div>
+      <h2>Upload File</h2>
 
-        <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            window.location.href = "/login";
-          }}
-        >
-          Logout
-        </button>
-      </div>
+      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
 
-      <div style={styles.content}>
-        <h1>Upload File</h1>
+      <input
+        placeholder="Title"
+        onChange={(e) => setTitle(e.target.value)}
+      />
 
-        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-        <button style={styles.button} onClick={upload}>Upload</button>
-      </div>
+      <select onChange={(e) => setStation(e.target.value)}>
+        <option value="math">Math</option>
+        <option value="chemistry">Chemistry</option>
+        <option value="physics">Physics</option>
+      </select>
+
+      <button onClick={upload}>Upload</button>
     </div>
   );
 }

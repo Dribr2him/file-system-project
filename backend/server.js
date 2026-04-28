@@ -132,23 +132,21 @@ app.post("/login", async (req, res) => {
 // 🟢 Upload
 app.post("/upload", auth, requireRole(["admin", "owner"]), upload.single("file"), async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: "Not allowed" });
-    }
+    const { title, station } = req.body;
 
-    const newFile = new File({
-      title: req.file.originalname,
-      type: req.file.mimetype,
-      url: req.file.path,
-      station: req.body.station // 🔥 تم التعديل
+    const file = new File({
+      filename: req.file.filename,
+      title,
+      station,
     });
 
-    await newFile.save();
-    res.json(newFile);
+    await file.save();
+
+    res.json({ message: "Uploaded" });
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Upload error" });
+    res.status(500).json({ error: "Upload failed" });
   }
 });
 
