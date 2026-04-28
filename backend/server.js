@@ -5,9 +5,16 @@ const multer = require("multer");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 
 // ===== App Config =====
 const app = express();
+
+// إنشاء فولدر uploads لو مش موجود
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
+
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
