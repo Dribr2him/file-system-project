@@ -11,7 +11,7 @@ const SECRET = "mysecretkey"; // غيرها بعدين
 const app = express();
 
 //ربط االسيرفر 
-const File = require("./models/File");
+// const File = require("./models/File");
 
 // إنشاء فولدر uploads لو مش موجود
 if (!fs.existsSync("uploads")) {
