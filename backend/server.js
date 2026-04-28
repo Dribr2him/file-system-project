@@ -117,11 +117,25 @@ app.post("/add-link", async (req, res) => {
 });
 
 // 🟢 Get Files
-app.get("/files", async (req, res) => {
-  const files = await File.find();
-  res.json(files);
-});
+const fs = require("fs");
 
+app.get("/files", async (req, res) => {
+  try {
+    const files = await File.find();
+
+    // فلترة الملفات اللي موجودة بس
+    const validFiles = files.filter(f => {
+      if (f.type === "link") return true;
+      return fs.existsSync(f.url);
+    });
+
+    res.json(validFiles);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 // ===== Delete File =====
 app.delete("/delete/:id", async (req, res) => {
