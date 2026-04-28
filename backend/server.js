@@ -9,7 +9,9 @@ const fs = require("fs");
 const SECRET = "mysecretkey"; // غيرها بعدين
 // ===== App Config =====
 const app = express();
-
+app.get("/", (req, res) => {
+  res.send("Server is running 🚀");
+});
 //ربط االسيرفر 
 // const File = require("./models/File");
 
