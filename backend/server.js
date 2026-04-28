@@ -128,7 +128,6 @@ app.post("/add-link", async (req, res) => {
 });
 
 // 🟢 Get Files
-const fs = require("fs");
 
 app.get("/files", async (req, res) => {
   try {
