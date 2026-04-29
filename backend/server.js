@@ -200,7 +200,7 @@ const buildPath = path.join(__dirname, "../frontend/build");
 app.use(express.static(buildPath));
 
 // 🔥 أهم سطر (حل Not Found)
-app.get("/*", (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(buildPath, "index.html"));
 });
 
