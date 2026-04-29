@@ -15,48 +15,37 @@ function Station() {
   }, [name]);
 
   return (
-    <div className="page">
+   <div className="page">
+  <header className="header">
+    <h1>📚 {station} Files</h1>
+  </header>
 
-      {/* 🔥 Header */}
-      <header className="header">
-        <h2>📚 File System</h2>
-        <div className="nav">
-          <a href="/">Home</a>
-          <a href="/admin">Admin</a>
-        </div>
-      </header>
+  <div className="filesGrid">
+    {files.map((file) => (
+      <div className="fileCard" key={file._id}>
+        <h3>{file.title}</h3>
 
-      {/* 🔥 Title */}
-      <h1 className="title">{name} Files</h1>
+        <a
+          href={`${API}/uploads/${file.filename}`}
+          target="_blank"
+          rel="noreferrer"
+          className="downloadBtn"
+        >
+          Download
+        </a>
 
-      {/* 🔥 Files */}
-      <div className="grid">
-        {files.length === 0 ? (
-          <p className="empty">No files yet 😢</p>
-        ) : (
-          files.map((file) => (
-            <div className="card" key={file._id}>
-              <h3>{file.title}</h3>
-
-              <a
-                href={`${API}/uploads/${file.filename}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn"
-              >
-                Download
-              </a>
-            </div>
-          ))
+        {(role === "admin" || role === "owner") && (
+          <button
+            className="deleteBtn"
+            onClick={() => handleDelete(file._id)}
+          >
+            Delete
+          </button>
         )}
       </div>
-
-      {/* 🔥 Footer */}
-      <footer className="footer">
-        <p>© 2026 File System | By Ibrahim 🚀</p>
-      </footer>
-
-    </div>
+    ))}
+  </div>
+</div>
   );
 }
 
