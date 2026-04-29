@@ -44,14 +44,8 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* 👨‍🎓 Users pages (محمي) */}
-        <Route
-          path="/station/:name"
-          element={
-            <ProtectedRoute>
-              <Station />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/station/:name" element={<Station />} />
+
 
         {/* 👑 Admin */}
         <Route

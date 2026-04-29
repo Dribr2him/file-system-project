@@ -138,6 +138,9 @@ app.post("/upload", auth, requireRole(["admin", "owner"]), upload.single("file")
   try {
     const { title, station } = req.body;
 
+    console.log("TITLE:", title);
+    console.log("STATION:", station); // 👈 مهم جدا
+
     const fileDoc = new File({
       filename: req.file.filename,
       title,
