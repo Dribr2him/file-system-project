@@ -4,9 +4,11 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
-import Station from "./pages/Station"; // 🔥 مهم
+import Station from "./pages/Station";
 
-// 🔐 حماية عامة (users)
+import Layout from "./components/Layout";
+
+// 🔐 حماية عامة
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/login" />;
@@ -30,29 +32,58 @@ function AdminRoute({ children }) {
   }
 }
 
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
         {/* 🏠 Home */}
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <Home />
+            </Layout>
+          }
+        />
 
         {/* 🔐 Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/login"
+          element={
+            <Layout>
+              <Login />
+            </Layout>
+          }
+        />
 
-        {/* 👨‍🎓 Users pages (محمي) */}
-        <Route path="/station/:name" element={<Station />} />
+        <Route
+          path="/register"
+          element={
+            <Layout>
+              <Register />
+            </Layout>
+          }
+        />
 
+        {/* 👨‍🎓 Station */}
+        <Route
+          path="/station/:name"
+          element={
+            <Layout>
+              <Station />
+            </Layout>
+          }
+        />
 
         {/* 👑 Admin */}
         <Route
           path="/admin"
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <Layout>
+                <AdminDashboard />
+              </Layout>
             </AdminRoute>
           }
         />
