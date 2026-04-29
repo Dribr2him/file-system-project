@@ -1,165 +1,90 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-button:hover {
-  transform: scale(1.05);
-  opacity: 0.9;
-}
-
-input:focus {
-  box-shadow: 0 0 5px #00f2fe;
-}
-body {
+/* ===== RESET ===== */
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-family: "Poppins", sans-serif;
-  background: #0f172a;
+}
+
+/* ===== BODY ===== */
+body {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
   color: white;
 }
 
-/* NAVBAR */
+/* ===== NAVBAR ===== */
 .navbar {
   display: flex;
   justify-content: space-between;
-  padding: 20px 40px;
-  background: #1e293b;
   align-items: center;
+  padding: 20px 40px;
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
 }
 
-.navbar a {
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.nav-links a {
   margin-left: 20px;
   text-decoration: none;
-  color: white;
+  color: #cbd5f5;
   transition: 0.3s;
 }
 
-.navbar a:hover {
+.nav-links a:hover {
   color: #3b82f6;
 }
 
-/* FOOTER */
+/* ===== FOOTER ===== */
 .footer {
   text-align: center;
   padding: 20px;
-  background: #1e293b;
-  margin-top: 40px;
+  background: rgba(30, 41, 59, 0.9);
+  margin-top: 50px;
 }
 
-/* CONTENT */
+/* ===== CONTENT ===== */
 .content {
-  padding: 30px;
+  padding: 40px;
 }
 
 /* ===== HOME CARDS ===== */
 .cardGrid {
   display: flex;
-  gap: 20px;
   justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
 }
 
 .card {
-  background: #1e293b;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
   padding: 20px;
   border-radius: 15px;
-  width: 250px;
+  width: 260px;
   text-align: center;
-  transition: 0.3s;
   cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.6s ease;
+}
+
+.card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .card:hover {
   transform: translateY(-10px) scale(1.05);
 }
 
-/* ===== FILES PAGE ===== */
-.filesGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-/* FILE CARD */
-.fileCard {
-  background: linear-gradient(145deg, #1e293b, #0f172a);
-  padding: 20px;
-  border-radius: 15px;
-  transition: 0.3s;
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
-}
-
-.fileCard:hover {
-  transform: translateY(-5px);
-}
-
-/* BUTTONS */
-.downloadBtn {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 10px 15px;
-  background: #3b82f6;
-  border-radius: 8px;
-  color: white;
-  text-decoration: none;
-}
-
-.deleteBtn {
-  margin-left: 10px;
-  padding: 10px 15px;
-  background: crimson;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-}
-
+/* ===== STATION PAGE ===== */
 .stationPage {
   animation: fadeIn 0.5s ease;
 }
@@ -171,25 +96,39 @@ body {
 
 .stationHeader h1 {
   font-size: 32px;
+  margin-bottom: 10px;
 }
 
+.stationHeader p {
+  color: #94a3b8;
+}
+
+/* ===== FILES GRID ===== */
 .filesGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
 }
 
+/* ===== FILE CARD ===== */
 .fileCard {
-  background: #1e293b;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
   padding: 20px;
   border-radius: 15px;
   transition: 0.3s;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.5s ease;
+}
+
+.fileCard h3 {
+  margin-bottom: 10px;
 }
 
 .fileCard:hover {
   transform: translateY(-5px) scale(1.02);
 }
 
+/* ===== BUTTONS ===== */
 .actions {
   margin-top: 15px;
   display: flex;
@@ -197,33 +136,57 @@ body {
 }
 
 .downloadBtn {
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: #3b82f6;
   border-radius: 8px;
   color: white;
   text-decoration: none;
+  transition: 0.3s;
+}
+
+.downloadBtn:hover {
+  background: #2563eb;
 }
 
 .deleteBtn {
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: crimson;
   border: none;
   border-radius: 8px;
   color: white;
   cursor: pointer;
+  transition: 0.3s;
 }
 
+.deleteBtn:hover {
+  background: red;
+}
+
+/* ===== INPUT ===== */
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+input:focus {
+  box-shadow: 0 0 8px #3b82f6;
+}
+
+/* ===== LOADING ===== */
 .loading {
   text-align: center;
   font-size: 18px;
 }
 
-/* animation */
+/* ===== ANIMATION ===== */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(15px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
