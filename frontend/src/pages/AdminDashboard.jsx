@@ -19,7 +19,7 @@ function AdminDashboard() {
     try {
       await axios.post(`${API}/upload`, formData, {
         headers: {
-          Authorization: localStorage.getItem("token"),
+          Authorization: "Bearer " + localStorage.getItem("token"),
         },
       });
 

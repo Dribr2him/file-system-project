@@ -47,9 +47,13 @@ const upload = multer({ storage });
 
 // ===== Auth Middleware =====
 const auth = (req, res, next) => {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
-  if (!token) return res.status(401).json({ error: "No token" });
+  if (!authHeader) {
+    return res.status(401).json({ error: "No token" });
+  }
+
+  const token = authHeader.split(" ")[1]; // 👈 مهم
 
   try {
     const decoded = jwt.verify(token, SECRET);
