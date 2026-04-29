@@ -9,18 +9,17 @@ const fs = require("fs");
 const path = require("path");
 
 const SECRET = "mysecretkey";
-
-// ===== App Config =====
 const app = express();
 
-// إنشاء فولدر uploads لو مش موجود
+// ===== Middlewares =====
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ===== Create uploads folder =====
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
-
-app.use(cors());
-app.use(express.json());
-app.use("/uploads", express.static("uploads"));
 
 // ===== Database =====
 mongoose.connect(process.env.MONGO_URL)
@@ -29,20 +28,21 @@ mongoose.connect(process.env.MONGO_URL)
 
 // ===== Models =====
 const File = mongoose.model("File", {
+  filename: String,
   title: String,
-  type: String,
-  url: String,
-  station: String // 🔥 تم التعديل
+  station: String
 });
 
 const User = require("./models/User");
 
-// ===== Multer Setup =====
+// ===== Multer =====
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + "-" + file.originalname)
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
 });
+
 const upload = multer({ storage });
 
 // ===== Auth Middleware =====
@@ -53,40 +53,37 @@ const auth = (req, res, next) => {
     return res.status(401).json({ error: "No token" });
   }
 
-  const token = authHeader.split(" ")[1]; // 👈 مهم
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, SECRET);
     req.user = decoded;
     next();
   } catch {
-    res.status(401).json({ error: "Invalid token" });
+    return res.status(401).json({ error: "Invalid token" });
   }
 };
-//role 
+
+// ===== Role Middleware =====
 const requireRole = (roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
     return res.status(403).json({ error: "Not allowed" });
   }
   next();
 };
-// ===== Routes =====
 
-// 🟢 Register
+// ===== Register =====
 app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // check لو موجود
     const exist = await User.findOne({ username });
     if (exist) {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // تشفير الباسورد
     const hashed = await bcrypt.hash(password, 10);
 
-    // 🔥 تحديد الرول
     const count = await User.countDocuments();
 
     const user = new User({
@@ -105,7 +102,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// 🟢 Login
+// ===== Login =====
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -133,103 +130,87 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// 🟢 Upload
-app.post("/upload", auth, requireRole(["admin", "owner"]), upload.single("file"), async (req, res) => {
-  try {
-    const { title, station } = req.body;
+// ===== Upload =====
+app.post(
+  "/upload",
+  auth,
+  requireRole(["admin", "owner"]),
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const { title, station } = req.body;
 
-    console.log("TITLE:", title);
-    console.log("STATION:", station); // 👈 مهم جدا
+      console.log("TITLE:", title);
+      console.log("STATION:", station);
 
-    const fileDoc = new File({
-      filename: req.file.filename,
-      title,
-      station
-    });
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
 
-    await fileDoc.save();
+      const fileDoc = new File({
+        filename: req.file.filename,
+        title,
+        station
+      });
 
-    res.json({ message: "Uploaded" });
+      await fileDoc.save();
 
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Upload failed" });
-  }
-});
+      res.json({ message: "Uploaded successfully" });
 
-// 🟢 Files by station
-app.get("/files/:station", async (req, res) => {
-  const files = await File.find({ station: req.params.station });
-  res.json(files);
-});
-
-// 🟢 Add Link
-app.post("/add-link", async (req, res) => {
-  const { title, url, station } = req.body;
-
-  const newFile = new File({
-    title,
-    type: "link",
-    url,
-    station // 🔥 تم التعديل
-  });
-
-  await newFile.save();
-  res.json(newFile);
-});
-
-// 🟢 Get All Files
-app.get("/files", async (req, res) => {
-  try {
-    const files = await File.find();
-
-    const validFiles = files.filter(f => {
-      if (f.type === "link") return true;
-      return fs.existsSync(f.url);
-    });
-
-    res.json(validFiles);
-
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// 🟢 Delete File (Protected)
-app.delete("/delete/:id", auth, requireRole(["admin", "owner"]), async (req, res) => {
-  try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: "Not allowed" });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ error: "Upload failed" });
     }
+  }
+);
 
-    await File.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted successfully" });
-
+// ===== Get files by station =====
+app.get("/files/:station", async (req, res) => {
+  try {
+    const files = await File.find({ station: req.params.station });
+    res.json(files);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Error fetching files" });
   }
 });
-// owner 
+
+// ===== Delete file =====
+app.delete(
+  "/delete/:id",
+  auth,
+  requireRole(["admin", "owner"]),
+  async (req, res) => {
+    try {
+      await File.findByIdAndDelete(req.params.id);
+      res.json({ message: "Deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// ===== Change Roles =====
 app.put("/make-admin/:id", auth, requireRole(["owner"]), async (req, res) => {
   await User.findByIdAndUpdate(req.params.id, { role: "admin" });
   res.json({ message: "User is now admin" });
 });
 
-// user 
 app.put("/make-user/:id", auth, requireRole(["owner"]), async (req, res) => {
   await User.findByIdAndUpdate(req.params.id, { role: "user" });
-  res.json({ message: "User is now normal user" });
+  res.json({ message: "User is now user" });
 });
+
+// ===== Serve uploaded files =====
+app.use("/uploads", express.static("uploads"));
 
 // ===== Serve React =====
 app.use(express.static(path.join(__dirname, "../frontend/build")));
 
-app.use((req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
 });
 
 // ===== Start Server =====
 app.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
+  console.log("Server running 🚀");
 });
