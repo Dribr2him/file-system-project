@@ -138,13 +138,13 @@ app.post("/upload", auth, requireRole(["admin", "owner"]), upload.single("file")
   try {
     const { title, station } = req.body;
 
-    const file = new File({
+    const fileDoc = new File({
       filename: req.file.filename,
       title,
-      station,
+      station
     });
 
-    await file.save();
+    await fileDoc.save();
 
     res.json({ message: "Uploaded" });
 
@@ -156,14 +156,8 @@ app.post("/upload", auth, requireRole(["admin", "owner"]), upload.single("file")
 
 // 🟢 Files by station
 app.get("/files/:station", async (req, res) => {
-  try {
-    const station = req.params.station;
-    const files = await File.find({ station });
-    res.json(files);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Server error" });
-  }
+  const files = await File.find({ station: req.params.station });
+  res.json(files);
 });
 
 // 🟢 Add Link
