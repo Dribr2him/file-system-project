@@ -11,7 +11,6 @@ function AdminDashboard() {
 
   const upload = async () => {
     if (!file) return alert("اختار ملف ❌");
-    if (!title) return alert("اكتب عنوان للملف ❌");
 
     const formData = new FormData();
     formData.append("file", file);
@@ -21,22 +20,18 @@ function AdminDashboard() {
     try {
       setLoading(true);
 
-      const res = await axios.post(`${API}/upload`, formData, {
+      await axios.post(`${API}/upload`, formData, {
         headers: {
           Authorization: "Bearer " + localStorage.getItem("token"),
         },
       });
 
-      console.log(res.data);
       alert("تم الرفع ✅");
-
-      // 🔥 Reset
       setFile(null);
       setTitle("");
-      setStation("math");
 
     } catch (err) {
-      console.log(err.response?.data || err.message);
+      console.log(err);
       alert("فشل الرفع ❌");
     } finally {
       setLoading(false);
@@ -44,40 +39,101 @@ function AdminDashboard() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Upload File</h2>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>Upload File 🚀</h1>
 
-      <input
-        type="file"
-        onChange={(e) => setFile(e.target.files[0])}
-      />
+        <label style={styles.label}>Choose File</label>
+        <input
+          type="file"
+          style={styles.input}
+          onChange={(e) => setFile(e.target.files[0])}
+        />
 
-      <br /><br />
+        <input
+          placeholder="Enter Title..."
+          style={styles.input}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-      <input
-        placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+        <select
+          style={styles.input}
+          value={station}
+          onChange={(e) => setStation(e.target.value)}
+        >
+          <option value="math">Math</option>
+          <option value="chemistry">Chemistry</option>
+          <option value="physics">Physics</option>
+        </select>
 
-      <br /><br />
-
-      <select
-        value={station}
-        onChange={(e) => setStation(e.target.value)}
-      >
-        <option value="math">Math</option>
-        <option value="chemistry">Chemistry</option>
-        <option value="physics">Physics</option>
-      </select>
-
-      <br /><br />
-
-      <button onClick={upload} disabled={loading}>
-        {loading ? "Uploading..." : "Upload"}
-      </button>
+        <button
+          style={{
+            ...styles.button,
+            background: loading ? "#555" : "linear-gradient(45deg,#4facfe,#00f2fe)"
+          }}
+          onClick={upload}
+        >
+          {loading ? "Uploading..." : "Upload"}
+        </button>
+      </div>
     </div>
   );
 }
 
 export default AdminDashboard;
+
+const styles = {
+  container: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+    fontFamily: "sans-serif",
+  },
+
+  card: {
+    background: "#111",
+    padding: "40px",
+    borderRadius: "20px",
+    width: "350px",
+    boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+    animation: "fadeIn 0.6s ease-in-out",
+  },
+
+  title: {
+    color: "#fff",
+    marginBottom: "20px",
+    textAlign: "center",
+  },
+
+  label: {
+    color: "#aaa",
+    fontSize: "14px",
+  },
+
+  input: {
+    width: "100%",
+    padding: "12px",
+    marginTop: "10px",
+    marginBottom: "15px",
+    borderRadius: "10px",
+    border: "none",
+    outline: "none",
+    background: "#222",
+    color: "#fff",
+    transition: "0.3s",
+  },
+
+  button: {
+    width: "100%",
+    padding: "12px",
+    border: "none",
+    borderRadius: "10px",
+    color: "#fff",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "0.3s",
+  },
+};
