@@ -10,8 +10,9 @@ const path = require("path");
 
 const app = express();
 
-// ⚠️ خليه env مش ثابت
+// ===== ENV =====
 const SECRET = process.env.JWT_SECRET || "mysecretkey";
+const PORT = process.env.PORT || 5000;
 
 // ===== Middlewares =====
 app.use(cors());
@@ -24,9 +25,12 @@ if (!fs.existsSync("uploads")) {
 }
 
 // ===== Database =====
-mongoose.connect(process.env.MONGO_URL)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.error("MongoDB error:", err);
+    process.exit(1);
+  });
 
 // ===== Models =====
 const File = mongoose.model("File", {
@@ -168,7 +172,7 @@ app.get("/files/:station", async (req, res) => {
 
 // ===== Delete =====
 app.delete(
-  "/delete/:id",
+  "/file/:id",
   auth,
   requireRole(["admin", "owner"]),
   async (req, res) => {
@@ -199,14 +203,14 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const buildPath = path.join(__dirname, "../frontend/build");
 app.use(express.static(buildPath));
 
-// 🔥 أهم سطر (حل Not Found)
+// ===== Catch all (FIXED) =====
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(buildPath, "index.html"));
 });
 
-// ===== Start =====
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} 🚀`);
+// ===== Start Server AFTER DB =====
+mongoose.connection.once("open", () => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT} 🚀`);
+  });
 });
