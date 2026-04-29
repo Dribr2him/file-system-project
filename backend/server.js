@@ -8,8 +8,10 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
 
-const SECRET = "mysecretkey";
 const app = express();
+
+// ⚠️ خليه env مش ثابت
+const SECRET = process.env.JWT_SECRET || "mysecretkey";
 
 // ===== Middlewares =====
 app.use(cors());
@@ -89,7 +91,7 @@ app.post("/register", async (req, res) => {
     const user = new User({
       username,
       password: hashed,
-      role: count === 0 ? "owner" : "user" // 👑 أول واحد owner
+      role: count === 0 ? "owner" : "user"
     });
 
     await user.save();
@@ -97,7 +99,6 @@ app.post("/register", async (req, res) => {
     res.json({ message: "User created", role: user.role });
 
   } catch (err) {
-    console.log(err);
     res.status(500).json({ error: "Register error" });
   }
 });
@@ -108,14 +109,10 @@ app.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
     const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(400).json({ error: "Wrong password" });
-    }
+    if (!match) return res.status(400).json({ error: "Wrong password" });
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
@@ -124,8 +121,7 @@ app.post("/login", async (req, res) => {
 
     res.json({ token });
 
-  } catch (err) {
-    console.log(err);
+  } catch {
     res.status(500).json({ error: "Login error" });
   }
 });
@@ -139,9 +135,6 @@ app.post(
   async (req, res) => {
     try {
       const { title, station } = req.body;
-
-      console.log("TITLE:", title);
-      console.log("STATION:", station);
 
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -157,24 +150,23 @@ app.post(
 
       res.json({ message: "Uploaded successfully" });
 
-    } catch (err) {
-      console.log(err);
+    } catch {
       res.status(500).json({ error: "Upload failed" });
     }
   }
 );
 
-// ===== Get files by station =====
+// ===== Get files =====
 app.get("/files/:station", async (req, res) => {
   try {
     const files = await File.find({ station: req.params.station });
     res.json(files);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Error fetching files" });
   }
 });
 
-// ===== Delete file =====
+// ===== Delete =====
 app.delete(
   "/delete/:id",
   auth,
@@ -183,8 +175,8 @@ app.delete(
     try {
       await File.findByIdAndDelete(req.params.id);
       res.json({ message: "Deleted successfully" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    } catch {
+      res.status(500).json({ error: "Delete failed" });
     }
   }
 );
@@ -200,17 +192,21 @@ app.put("/make-user/:id", auth, requireRole(["owner"]), async (req, res) => {
   res.json({ message: "User is now user" });
 });
 
-// ===== Serve uploaded files =====
-app.use("/uploads", express.static("uploads"));
+// ===== Serve uploads =====
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ===== Serve React =====
-app.use(express.static(path.join(__dirname, "../frontend/build")));
+// ===== Serve React build =====
+const buildPath = path.join(__dirname, "../frontend/build");
+app.use(express.static(buildPath));
 
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
+// 🔥 أهم سطر (حل Not Found)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(buildPath, "index.html"));
 });
 
-// ===== Start Server =====
-app.listen(5000, () => {
-  console.log("Server running 🚀");
+// ===== Start =====
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} 🚀`);
 });
